@@ -1,10 +1,16 @@
 (ns kibe.core)
 
 (defprotocol IFailure
-  (fail-unwrap [this]))
+  (fail-unwrap
+    [this]))
 
 (defprotocol ISuccess
-  (success-unwrap [this]))
+  (success-unwrap
+    [this]))
+
+(defprotocol MonadCallable
+  (call
+   [this args]))
 
 (defn failure?
   [i]
@@ -22,6 +28,27 @@
   [i]
   (reify ISuccess (success-unwrap [this] i)))
 
+(defmacro defh
+  [name doc-string attr-list & forms]
+  (assert (symbol? name) "First form must be a symbol.")
+  (assert (string? doc-string) "Second form must be a doc string.")
+  (assert (and (vector? attr-list) (map symbol? attr-list))
+          "Third form must be a vector of symbols.")
+  `(def ~name
+     (reify
+       MonadCallable
+       (call [this# args#]
+         (let [[~@attr-list] args#]
+           (try
+             (let [retval# (do ~@forms)]
+               (assert
+                (or (failure? retval#) (success? retval#))
+                (str "Function " ~name " did not a return an explict"
+                     " success or failure value."))
+               retval#)
+             (catch Exception e#
+               (failure {:exception e#}))))))))
+
 (defmacro handle
   [[val-name i] success-path failure-path]
   `(let [i# ~i]
@@ -30,23 +57,6 @@
          ~failure-path)
        (let [~val-name (success-unwrap i#)]
          ~success-path))))
-
-(defmacro defh
-  [name doc-string attr-list & forms]
-  (assert (symbol? name) "First form must be a symbol.")
-  (assert (string? doc-string) "Second form must be a doc string.")
-  (assert (and (vector? attr-list) (map symbol? attr-list))
-          "Third form must be a vector of symbols.")
-  `(defn ~name ~doc-string ~attr-list
-     (try
-       (let [retval# (do ~@forms)]
-         (assert
-          (or (failure? retval#) (success? retval#))
-          (str "Function " ~name " did not a return an explict"
-               " success or failure value."))
-         retval#)
-       (catch Exception e#
-         (failure {:exception e#})))))
 
 (defmacro cond?>
   [i & forms]

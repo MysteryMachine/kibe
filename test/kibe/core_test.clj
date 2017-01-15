@@ -45,20 +45,20 @@
 (deftest defh-test
   (testing "test-1"
     (handle
-     [result (test-1 2 1)]
+     [result (call test-1 [2 1])]
      (is (= 1 result))
      (throw (Exception. "Error, should've gone down the other path")))
     (handle
-     [result (test-1 1 1)]
+     [result (call test-1 [1 1])]
      (throw (Exception. "Error, should've gone down the other path"))
      (is (= {:error true} result))))
   (testing "test-2"
     (handle
-     [result (test-2 2 1)]
+     [result (call test-2 [2 1])]
      (is (= 2 result))
      (throw (Exception. "Error, should've gone down the other path")))
     (handle
-     [result (test-2 1 0)]
+     [result (call test-2 [1 0])]
      (throw (Exception. "Error, should've gone down the other path"))
      (is (:exception result)))))
 
