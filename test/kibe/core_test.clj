@@ -18,15 +18,25 @@
 (deftest failure?-test
   (is (failure? (failure true))))
 
+(defh fail
+  "always fails"
+  []
+  (failure true))
+
+(defh succeed
+  "always succeeds"
+  []
+  (success true))
+
 (deftest handle-test
   (testing "failure"
     (handle
-     [target (failure true)]
+     [target (fail)]
      (throw (Exception. "Error, should've gone down the other path"))
      (is (true? target))))
   (testing "success"
     (handle
-     [target (success true)]
+     [target (succeed)]
      (is (true? target))
      (throw (Exception. "Error, should've gone down the other path")))))
 
@@ -42,23 +52,23 @@
   [a b]
   (success (/ a b)))
 
-(deftest defh-test
+(deftest handle-test
   (testing "test-1"
     (handle
-     [result (call test-1 [2 1])]
+     [result (test-1 2 1)]
      (is (= 1 result))
      (throw (Exception. "Error, should've gone down the other path")))
     (handle
-     [result (call test-1 [1 1])]
+     [result (test-1 1 1)]
      (throw (Exception. "Error, should've gone down the other path"))
      (is (= {:error true} result))))
   (testing "test-2"
     (handle
-     [result (call test-2 [2 1])]
+     [result (test-2 2 1)]
      (is (= 2 result))
      (throw (Exception. "Error, should've gone down the other path")))
     (handle
-     [result (call test-2 [1 0])]
+     [result (test-2 1 0)]
      (throw (Exception. "Error, should've gone down the other path"))
      (is (:exception result)))))
 
@@ -126,3 +136,10 @@
    [result (test-5 5 6 0 7)]
    (throw (Exception. "Error, should've gone down the other path"))
    (is (= {:error true} result))))
+
+(deftest defh-test
+  (is (satisfies? MonadCallable test-1))
+  (is (satisfies? MonadCallable test-2))
+  (is (satisfies? MonadCallable test-3))
+  (is (satisfies? MonadCallable test-4))
+  (is (satisfies? MonadCallable test-5)))

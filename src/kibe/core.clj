@@ -50,8 +50,8 @@
                (failure {:exception e#}))))))))
 
 (defmacro handle
-  [[val-name i] success-path failure-path]
-  `(let [i# ~i]
+  [[val-name [fh & args]] success-path failure-path]
+  `(let [i# (call ~fh [~@args])]
      (if (failure? i#)
        (let [~val-name (fail-unwrap i#)]
          ~failure-path)
